@@ -11,8 +11,10 @@ const chatSchema = new mongoose.Schema({
       type: String,
     },
     sender: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
+    },
+    date: {
+      type: String,
     },
   }],
   room: {

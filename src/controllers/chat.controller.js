@@ -74,4 +74,42 @@ export default {
       throw new ApplicationError(500, error);
     }
   },
+  newChatMessage: async (req) => {
+    try {
+      const currentRoom = await Room.findOne({ roomName: req.roomName });
+      const currentChat = await Chat.findOne({ chatName: req.chatName });
+      const currentUser = await User.findOne({
+        $or: [{ email: req.email }, { userName: req.userName }],
+      });
+      if (!currentRoom || !currentChat || !currentUser) {
+        return undefined;
+      }
+      const message = { message: req.message, user: currentUser.userName, date: req.date };
+      currentChat.chat.push(message);
+      currentChat.save();
+      return message;
+    } catch (error) {
+      throw new ApplicationError(500, error);
+    }
+  },
+  getChat: async (req, res) => {
+    try {
+      const currentChat = await Chat.findOne({ chatName: req.query.chatName });
+
+      if (!currentChat) {
+        return res.status(404).json({
+          status: 'error',
+          error: {
+            message: `${req.query.chatName} chat not found.`,
+          },
+        });
+      }
+      return res.status(200).json({
+        status: 'success',
+        data: currentChat,
+      });
+    } catch (error) {
+      throw new ApplicationError(500, error);
+    }
+  },
 };

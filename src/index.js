@@ -2,11 +2,15 @@ import http from 'http';
 import debug from 'debug';
 import { config } from 'dotenv';
 import socketioJwt from 'socketio-jwt';
+import chatController from './controllers/chat.controller';
 import app from './app';
 import './db/mongoose';
 
 config();
 
+const {
+  createChat, deleteChat, newChatMessage,
+} = chatController;
 const DEBUG = debug('dev');
 const PORT = process.env.PORT || 8080;
 const jwtPublicSecret = process.env.JWT_PUBLIC_SECRET.replace(/\\n/g, '\n');
@@ -28,10 +32,20 @@ const io = require('socket.io')(server, {
 
 io.on('connection', (socket) => {
   DEBUG('User connected to the socket');
-  socket.on('chat message', (message) => {
-    //const message = req.message;
-    console.log(message)
-    socket.broadcast.emit('received message', message);
+  socket.on('connect room', (room) => {
+    socket.join(room);
+    socket.on('chat message', (message) => {
+      console.log(message);
+      newChatMessage(message).then((userMessage) => {
+        if (userMessage !== undefined) {
+          socket.to(room).emit('received message', userMessage);
+        }
+      });
+    });
+  });
+
+  socket.on('leave room', (room) => {
+    socket.leave(room);
   });
 
   socket.on('disconnect', (reason) => {
